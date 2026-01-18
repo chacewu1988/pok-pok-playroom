@@ -3,99 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>幼儿形状认知挑战</title>
+    <title>幼儿形状认知游戏 - 纯净版</title>
     <style>
         :root {
-            --bg-color: #f8fafc;
-            --primary-blue: #3b82f6;
+            --bg-color: #eef2ff;
+            --target-shadow: #cbd5e1;
         }
         body { 
-            margin: 0; background: var(--bg-color); font-family: 'PingFang SC', sans-serif; 
-            display: flex; flex-direction: column; align-items: center; overflow: hidden; touch-action: none;
+            margin: 0; padding: 0; background: var(--bg-color); 
+            font-family: sans-serif; display: flex; flex-direction: column; 
+            align-items: center; height: 100vh; overflow: hidden; touch-action: none;
         }
-        h1 { color: #1e293b; margin: 20px 0 10px; font-size: 22px; }
-        
-        /* 难度控制栏 */
-        .controls { margin-bottom: 20px; display: flex; gap: 10px; }
+
+        /* 顶部导航按钮 - 增大点击区域 */
+        .controls { 
+            height: 15vh; display: flex; align-items: center; gap: 20px; z-index: 10;
+        }
         button { 
-            padding: 8px 16px; border: none; border-radius: 20px; background: white; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; font-size: 14px;
+            padding: 12px 24px; border: none; border-radius: 50px; background: white; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-size: 18px; font-weight: bold; color: #475569;
         }
-        button.active { background: var(--primary-blue); color: white; }
+        button.active { background: #6366f1; color: white; }
 
-        .game-area {
-            position: relative; width: 90vw; height: 70vh; max-width: 600px;
-            background: white; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.05);
-            padding: 20px; display: flex; flex-direction: column; justify-content: space-between;
-        }
-
-        /* 目标区域和形状区域 */
-        .zone { 
-            display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; 
-            min-height: 100px; align-content: center;
+        /* 游戏主区域 */
+        .game-container {
+            width: 95vw; height: 80vh; max-width: 900px;
+            background: rgba(255, 255, 255, 0.7); border-radius: 30px;
+            display: flex; flex-direction: column; padding: 20px; box-sizing: border-box;
         }
 
-        /* 形状基础样式 */
-        .shape { 
-            width: 55px; height: 55px; position: relative; transition: transform 0.1s;
-            display: flex; align-items: center; justify-content: center;
+        .zone {
+            flex: 1; display: flex; flex-wrap: wrap; justify-content: center;
+            align-content: center; gap: 30px;
         }
-        .shape-inner { width: 100%; height: 100%; }
+
+        /* 形状基础定义 */
+        .shape-common { width: 80px; height: 80px; position: relative; }
         
-        /* 各种几何图形 */
-        .type-circle { border-radius: 50%; }
-        .type-square { border-radius: 8px; }
-        .type-triangle { 
-            width: 0; height: 0; border-left: 28px solid transparent; 
-            border-right: 28px solid transparent; border-bottom: 55px solid; 
+        /* 几何图形绘制 */
+        .circle { border-radius: 50%; }
+        .square { border-radius: 8px; }
+        .triangle { 
+            width: 0; height: 0; background: transparent !important;
+            border-left: 40px solid transparent; border-right: 40px solid transparent; 
+            border-bottom: 80px solid; 
+        }
+        .star { 
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
         }
 
-        /* 目标框样式 */
-        .target { 
-            width: 65px; height: 65px; border: 3px dashed #e2e8f0; 
-            border-radius: 12px; display: flex; align-items: center; justify-content: center;
-            background: #fdfdfd; transition: all 0.3s;
+        /* 目标框样式：通过透明度形成“影子”效果 */
+        .target {
+            width: 90px; height: 90px; border: 4px dashed var(--target-shadow);
+            border-radius: 15px; display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.5);
         }
-        .target.matched { border: 3px solid #10b981; background: #f0fdf4; transform: scale(1.05); }
+        .target .shape-common { opacity: 0.2; filter: grayscale(1); transform: scale(0.9); }
+        .target.matched { border: 4px solid #10b981; background: #f0fdf4; border-style: solid; }
+        .target.matched .shape-common { opacity: 1; filter: none; transform: scale(1); transition: all 0.3s; }
 
-        .dragging { opacity: 0.8; transform: scale(1.2); z-index: 100; pointer-events: none; }
+        /* 拖拽中的形状 */
+        .drag-item { cursor: pointer; z-index: 100; }
+        .dragging { transform: scale(1.3); opacity: 0.9; position: fixed !important; pointer-events: none; }
     </style>
 </head>
 <body>
 
-    <h1>找找看，它们在哪？</h1>
-    
     <div class="controls">
-        <button onclick="startGame(3)" id="btn-3" class="active">简单 (3)</button>
-        <button onclick="startGame(5)" id="btn-5">中等 (5)</button>
-        <button onclick="startGame(8)" id="btn-8">挑战 (8)</button>
+        <button onclick="initGame(3)" id="btn-3" class="active">3</button>
+        <button onclick="initGame(5)" id="btn-5">5</button>
+        <button onclick="initGame(8)" id="btn-8">8</button>
     </div>
 
-    <div class="game-area" id="gameArea">
+    <div class="game-container">
         <div class="zone" id="targetZone"></div>
-        <hr style="width: 80%; border: 0; border-top: 1px solid #f1f5f9;">
+        <hr style="width: 100%; border: 1px dashed #cbd5e1; margin: 0;">
         <div class="zone" id="sourceZone"></div>
     </div>
 
     <script>
-        const shapesConfig = [
-            { type: 'circle', color: '#ef4444' },
-            { type: 'square', color: '#3b82f6' },
-            { type: 'triangle', color: '#22c55e' },
-            { type: 'square', color: '#f59e0b' }, // 橙色正方形
-            { type: 'circle', color: '#8b5cf6' }, // 紫色圆形
-            { type: 'triangle', color: '#ec4899' }, // 粉色三角形
-            { type: 'square', color: '#06b6d4' }, // 青色正方形
-            { type: 'circle', color: '#475569' }  // 灰色圆形
-        ];
+        const shapeTypes = ['circle', 'square', 'triangle', 'star'];
+        const colors = ['#ef4444', '#3b82f6', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
 
-        let activeElement = null;
-        let offset = { x: 0, y: 0 };
-        let initialPos = { x: 0, y: 0 };
+        let activeEl = null;
+        let startOffset = { x: 0, y: 0 };
 
-        function startGame(count) {
-            // 更新按钮状态
-            document.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+        function initGame(count) {
+            // 更新按钮
+            document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
             document.getElementById(`btn-${count}`).classList.add('active');
 
             const targetZone = document.getElementById('targetZone');
@@ -103,101 +98,106 @@
             targetZone.innerHTML = '';
             sourceZone.innerHTML = '';
 
-            // 截取对应数量的形状配置
-            const currentShapes = shapesConfig.slice(0, count);
+            // 生成不重复的形状+颜色组合
+            let combinations = [];
+            let tempTypes = [...shapeTypes];
+            let tempColors = [...colors];
             
-            // 渲染目标框（打乱顺序）
-            [...currentShapes].sort(() => Math.random() - 0.5).forEach(conf => {
-                const target = document.createElement('div');
-                target.className = 'target';
-                target.dataset.match = `${conf.type}-${conf.color}`;
-                targetZone.appendChild(target);
+            // 洗牌算法保证随机
+            tempColors.sort(() => Math.random() - 0.5);
+
+            for(let i=0; i<count; i++) {
+                // 如果形状用完了，重新洗牌形状池，但颜色保持唯一
+                if(tempTypes.length === 0) tempTypes = [...shapeTypes];
+                const typeIndex = Math.floor(Math.random() * tempTypes.length);
+                
+                combinations.push({
+                    type: tempTypes.splice(typeIndex, 1)[0],
+                    color: tempColors[i],
+                    id: `item-${i}`
+                });
+            }
+
+            // 渲染目标影子 (打乱顺序)
+            [...combinations].sort(() => Math.random() - 0.5).forEach(conf => {
+                const slot = document.createElement('div');
+                slot.className = 'target';
+                slot.dataset.matchId = conf.id;
+                
+                const shadow = document.createElement('div');
+                shadow.className = `shape-common ${conf.type}`;
+                if(conf.type === 'triangle') shadow.style.borderBottomColor = '#000';
+                else shadow.style.backgroundColor = '#000';
+                
+                slot.appendChild(shadow);
+                targetZone.appendChild(slot);
             });
 
-            // 渲染待选形状
-            currentShapes.forEach((conf, index) => {
-                const shape = document.createElement('div');
-                shape.className = `shape drag-item`;
-                shape.id = `shape-${index}`;
-                shape.dataset.id = `${conf.type}-${conf.color}`;
+            // 渲染彩色形状
+            combinations.forEach(conf => {
+                const el = document.createElement('div');
+                el.className = `shape-common ${conf.type} drag-item`;
+                el.dataset.id = conf.id;
                 
-                const inner = document.createElement('div');
-                inner.className = `shape-inner type-${conf.type}`;
-                if(conf.type === 'triangle') {
-                    inner.style.borderBottomColor = conf.color;
-                } else {
-                    inner.style.backgroundColor = conf.color;
-                }
-                
-                shape.appendChild(inner);
-                sourceZone.appendChild(shape);
+                if(conf.type === 'triangle') el.style.borderBottomColor = conf.color;
+                else el.style.backgroundColor = conf.color;
 
-                // 绑定触摸事件
-                shape.ontouchstart = handleStart;
+                el.ontouchstart = handleTouchStart;
+                sourceZone.appendChild(el);
             });
         }
 
-        function handleStart(e) {
+        function handleTouchStart(e) {
             e.preventDefault();
-            activeElement = e.currentTarget;
+            activeEl = e.currentTarget;
             const touch = e.touches[0];
-            const rect = activeElement.getBoundingClientRect();
+            const rect = activeEl.getBoundingClientRect();
             
-            // 记录初始位置以便回弹
-            initialPos = { x: activeElement.offsetLeft, y: activeElement.offsetTop };
-            // 计算手指在物体内的偏移量
-            offset = { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
-            
-            activeElement.classList.add('dragging');
-            activeElement.style.position = 'fixed';
-            moveAt(touch.clientX, touch.clientY);
+            startOffset = {
+                x: touch.clientX - rect.left,
+                y: touch.clientY - rect.top
+            };
 
-            document.ontouchmove = (e) => moveAt(e.touches[0].clientX, e.touches[0].clientY);
-            document.ontouchend = handleEnd;
+            activeEl.classList.add('dragging');
+            updatePosition(touch.clientX, touch.clientY);
+
+            document.ontouchmove = (ev) => updatePosition(ev.touches[0].clientX, ev.touches[0].clientY);
+            document.ontouchend = handleTouchEnd;
         }
 
-        function moveAt(pageX, pageY) {
-            if (!activeElement) return;
-            activeElement.style.left = pageX - offset.x + 'px';
-            activeElement.style.top = pageY - offset.y + 'px';
+        function updatePosition(x, y) {
+            if(!activeEl) return;
+            activeEl.style.left = (x - startOffset.x) + 'px';
+            activeEl.style.top = (y - startOffset.y) + 'px';
         }
 
-        function handleEnd(e) {
-            if (!activeElement) return;
+        function handleTouchEnd(e) {
+            if(!activeEl) return;
             const touch = e.changedTouches[0];
-            const dropID = activeElement.dataset.id;
-            
-            // 寻找匹配的目标框
             const targets = document.querySelectorAll('.target');
-            let isMatched = false;
+            let success = false;
 
             targets.forEach(target => {
+                if(target.classList.contains('matched')) return;
+                
                 const rect = target.getBoundingClientRect();
-                // 碰撞检测
-                if (touch.clientX > rect.left && touch.clientX < rect.right &&
-                    touch.clientY > rect.top && touch.clientY < rect.bottom) {
+                if(touch.clientX > rect.left && touch.clientX < rect.right &&
+                   touch.clientY > rect.top && touch.clientY < rect.bottom) {
                     
-                    if (target.dataset.match === dropID && !target.classList.contains('matched')) {
-                        // 匹配成功
+                    if(target.dataset.matchId === activeEl.dataset.id) {
                         target.classList.add('matched');
-                        target.appendChild(activeElement);
-                        
-                        // 重置位置到目标框正中心
-                        activeElement.style.position = 'static';
-                        activeElement.classList.remove('dragging');
-                        activeElement.ontouchstart = null; // 禁止再次拖动
-                        isMatched = true;
+                        activeEl.remove(); // 移除拖拽元素，目标框内的影子变色
+                        success = true;
                     }
                 }
             });
 
-            if (!isMatched) {
-                // 回到原地
-                activeElement.style.position = 'static';
-                activeElement.classList.remove('dragging');
+            if(!success) {
+                activeEl.classList.remove('dragging');
+                activeEl.style.position = 'static';
             }
-
-            activeElement = null;
+            
+            activeEl = null;
             document.ontouchmove = null;
             checkWin();
         }
@@ -205,16 +205,19 @@
         function checkWin() {
             const matched = document.querySelectorAll('.target.matched').length;
             const total = document.querySelectorAll('.target').length;
-            if (matched === total) {
+            if(matched === total) {
                 setTimeout(() => {
-                    alert('🎉 太棒了！所有的形状都找对啦！');
-                    startGame(total);
-                }, 300);
+                    // 简单的视觉反馈
+                    document.body.style.backgroundColor = '#dcfce7';
+                    setTimeout(() => {
+                        document.body.style.backgroundColor = '#eef2ff';
+                        initGame(total);
+                    }, 1000);
+                }, 500);
             }
         }
 
-        // 初始化游戏
-        startGame(3);
+        initGame(3);
     </script>
 </body>
 </html>
