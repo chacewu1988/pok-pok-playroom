@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>幼儿形状认知游戏 - 纯净版</title>
+    <title>幼儿认知挑战 - 8种形状版</title>
     <style>
         :root {
-            --bg-color: #eef2ff;
-            --target-shadow: #cbd5e1;
+            --bg-color: #f0f4f8;
+            --shadow-color: #d1d5db;
         }
         body { 
             margin: 0; padding: 0; background: var(--bg-color); 
@@ -15,81 +15,88 @@
             align-items: center; height: 100vh; overflow: hidden; touch-action: none;
         }
 
-        /* 顶部导航按钮 - 增大点击区域 */
         .controls { 
-            height: 15vh; display: flex; align-items: center; gap: 20px; z-index: 10;
+            height: 12vh; display: flex; align-items: center; gap: 15px; 
         }
         button { 
-            padding: 12px 24px; border: none; border-radius: 50px; background: white; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-size: 18px; font-weight: bold; color: #475569;
+            padding: 10px 25px; border: none; border-radius: 20px; background: white; 
+            box-shadow: 0 4px 0 #cbd5e1; font-size: 18px; font-weight: bold; color: #475569;
+            transition: all 0.1s;
         }
-        button.active { background: #6366f1; color: white; }
+        button:active { transform: translateY(2px); box-shadow: 0 2px 0 #cbd5e1; }
+        button.active { background: #6366f1; color: white; box-shadow: 0 4px 0 #4338ca; }
 
-        /* 游戏主区域 */
-        .game-container {
-            width: 95vw; height: 80vh; max-width: 900px;
-            background: rgba(255, 255, 255, 0.7); border-radius: 30px;
-            display: flex; flex-direction: column; padding: 20px; box-sizing: border-box;
+        .game-area {
+            width: 95vw; height: 85vh; max-width: 800px;
+            display: flex; flex-direction: column; gap: 10px;
         }
 
         .zone {
             flex: 1; display: flex; flex-wrap: wrap; justify-content: center;
-            align-content: center; gap: 30px;
+            align-content: center; gap: 15px; padding: 10px;
+            background: rgba(255,255,255,0.4); border-radius: 20px;
         }
 
-        /* 形状基础定义 */
-        .shape-common { width: 80px; height: 80px; position: relative; }
-        
-        /* 几何图形绘制 */
-        .circle { border-radius: 50%; }
-        .square { border-radius: 8px; }
-        .triangle { 
-            width: 0; height: 0; background: transparent !important;
-            border-left: 40px solid transparent; border-right: 40px solid transparent; 
-            border-bottom: 80px solid; 
+        /* 形状容器 */
+        .shape-item { 
+            width: 75px; height: 75px; display: flex; align-items: center; justify-content: center;
         }
-        .star { 
-            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-        }
+        svg { width: 65px; height: 65px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.1)); }
 
-        /* 目标框样式：通过透明度形成“影子”效果 */
-        .target {
-            width: 90px; height: 90px; border: 4px dashed var(--target-shadow);
+        /* 目标框 */
+        .target-box {
+            width: 85px; height: 85px; border: 3px dashed var(--shadow-color);
             border-radius: 15px; display: flex; align-items: center; justify-content: center;
-            background: rgba(255,255,255,0.5);
+            background: #fff; transition: all 0.3s;
         }
-        .target .shape-common { opacity: 0.2; filter: grayscale(1); transform: scale(0.9); }
-        .target.matched { border: 4px solid #10b981; background: #f0fdf4; border-style: solid; }
-        .target.matched .shape-common { opacity: 1; filter: none; transform: scale(1); transition: all 0.3s; }
+        .target-box.matched { border: 3px solid #10b981; background: #ecfdf5; transform: scale(1.05); }
+        .target-box svg { opacity: 0.15; filter: grayscale(1); }
+        .target-box.matched svg { opacity: 1; filter: none; }
 
-        /* 拖拽中的形状 */
-        .drag-item { cursor: pointer; z-index: 100; }
-        .dragging { transform: scale(1.3); opacity: 0.9; position: fixed !important; pointer-events: none; }
+        /* 拖拽态 */
+        .dragging { position: fixed !important; z-index: 1000; transform: scale(1.2); pointer-events: none; }
     </style>
 </head>
 <body>
 
     <div class="controls">
-        <button onclick="initGame(3)" id="btn-3" class="active">3</button>
-        <button onclick="initGame(5)" id="btn-5">5</button>
-        <button onclick="initGame(8)" id="btn-8">8</button>
+        <button onclick="initGame(3)" id="btn-3" class="active">简单</button>
+        <button onclick="initGame(5)" id="btn-5">中等</button>
+        <button onclick="initGame(8)" id="btn-8">挑战</button>
     </div>
 
-    <div class="game-container">
+    <div class="game-area">
         <div class="zone" id="targetZone"></div>
-        <hr style="width: 100%; border: 1px dashed #cbd5e1; margin: 0;">
         <div class="zone" id="sourceZone"></div>
     </div>
 
     <script>
-        const shapeTypes = ['circle', 'square', 'triangle', 'star'];
-        const colors = ['#ef4444', '#3b82f6', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
+        // 定义8种不同的形状数据 (SVG Path)
+        const SHAPE_LIBRARY = [
+            { name: 'circle', path: 'M32,64A32,32,0,1,0,32,0,32,32,0,1,0,32,64Z' },
+            { name: 'square', path: 'M4,4H60V60H4Z' },
+            { name: 'triangle', path: 'M32,4 L60,60 L4,60 Z' },
+            { name: 'star', path: 'M32,4 L40,24 L60,24 L44,38 L50,60 L32,46 L14,60 L20,38 L4,24 L24,24 Z' },
+            { name: 'pentagon', path: 'M32,4 L60,24 L50,58 L14,58 L4,24 Z' },
+            { name: 'heart', path: 'M32,58 L28,54 C12,40 4,32 4,22 A12,12 0 0 1 28,10 L32,14 L36,10 A12,12 0 0 1 60,22 C60,32 52,40 36,54 Z' },
+            { name: 'moon', path: 'M32,4 A28,28 0 1 1 12,50 A22,22 0 1 0 32,4 Z' },
+            { name: 'trapezoid', path: 'M16,10 L48,10 L60,54 L4,54 Z' }
+        ];
+
+        const COLORS = ['#FF6B6B', '#4D96FF', '#6BCB77', '#FFD93D', '#92A9BD', '#F473B9', '#646464', '#FF8E00'];
 
         let activeEl = null;
-        let startOffset = { x: 0, y: 0 };
+        let offset = { x: 0, y: 0 };
+
+        function createSVG(shape, color) {
+            return `
+                <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+                    <path d="${shape.path}" fill="${color}" />
+                </svg>
+            `;
+        }
 
         function initGame(count) {
-            // 更新按钮
             document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
             document.getElementById(`btn-${count}`).classList.add('active');
 
@@ -98,52 +105,34 @@
             targetZone.innerHTML = '';
             sourceZone.innerHTML = '';
 
-            // 生成不重复的形状+颜色组合
-            let combinations = [];
-            let tempTypes = [...shapeTypes];
-            let tempColors = [...colors];
-            
-            // 洗牌算法保证随机
-            tempColors.sort(() => Math.random() - 0.5);
+            // 1. 核心修复：从形状库中随机抽取 N 个不重复的形状
+            let selectedShapes = [...SHAPE_LIBRARY].sort(() => Math.random() - 0.5).slice(0, count);
+            // 2. 颜色也进行洗牌
+            let selectedColors = [...COLORS].sort(() => Math.random() - 0.5);
 
-            for(let i=0; i<count; i++) {
-                // 如果形状用完了，重新洗牌形状池，但颜色保持唯一
-                if(tempTypes.length === 0) tempTypes = [...shapeTypes];
-                const typeIndex = Math.floor(Math.random() * tempTypes.length);
-                
-                combinations.push({
-                    type: tempTypes.splice(typeIndex, 1)[0],
-                    color: tempColors[i],
-                    id: `item-${i}`
-                });
-            }
+            let gameData = selectedShapes.map((shape, i) => ({
+                ...shape,
+                color: selectedColors[i],
+                id: `shape-${i}`
+            }));
 
-            // 渲染目标影子 (打乱顺序)
-            [...combinations].sort(() => Math.random() - 0.5).forEach(conf => {
-                const slot = document.createElement('div');
-                slot.className = 'target';
-                slot.dataset.matchId = conf.id;
-                
-                const shadow = document.createElement('div');
-                shadow.className = `shape-common ${conf.type}`;
-                if(conf.type === 'triangle') shadow.style.borderBottomColor = '#000';
-                else shadow.style.backgroundColor = '#000';
-                
-                slot.appendChild(shadow);
-                targetZone.appendChild(slot);
+            // 3. 渲染目标（影子）- 顺序打乱
+            [...gameData].sort(() => Math.random() - 0.5).forEach(item => {
+                const box = document.createElement('div');
+                box.className = 'target-box';
+                box.dataset.matchId = item.id;
+                box.innerHTML = createSVG(item, '#333');
+                targetZone.appendChild(box);
             });
 
-            // 渲染彩色形状
-            combinations.forEach(conf => {
-                const el = document.createElement('div');
-                el.className = `shape-common ${conf.type} drag-item`;
-                el.dataset.id = conf.id;
-                
-                if(conf.type === 'triangle') el.style.borderBottomColor = conf.color;
-                else el.style.backgroundColor = conf.color;
-
-                el.ontouchstart = handleTouchStart;
-                sourceZone.appendChild(el);
+            // 4. 渲染源形状
+            gameData.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'shape-item drag-item';
+                div.dataset.id = item.id;
+                div.innerHTML = createSVG(item, item.color);
+                div.ontouchstart = handleTouchStart;
+                sourceZone.appendChild(div);
             });
         }
 
@@ -153,67 +142,59 @@
             const touch = e.touches[0];
             const rect = activeEl.getBoundingClientRect();
             
-            startOffset = {
-                x: touch.clientX - rect.left,
-                y: touch.clientY - rect.top
-            };
-
+            offset = { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
             activeEl.classList.add('dragging');
-            updatePosition(touch.clientX, touch.clientY);
+            moveAt(touch.clientX, touch.clientY);
 
-            document.ontouchmove = (ev) => updatePosition(ev.touches[0].clientX, ev.touches[0].clientY);
+            document.ontouchmove = (ev) => moveAt(ev.touches[0].clientX, ev.touches[0].clientY);
             document.ontouchend = handleTouchEnd;
         }
 
-        function updatePosition(x, y) {
+        function moveAt(x, y) {
             if(!activeEl) return;
-            activeEl.style.left = (x - startOffset.x) + 'px';
-            activeEl.style.top = (y - startOffset.y) + 'px';
+            activeEl.style.left = (x - offset.x) + 'px';
+            activeEl.style.top = (y - offset.y) + 'px';
         }
 
         function handleTouchEnd(e) {
             if(!activeEl) return;
             const touch = e.changedTouches[0];
-            const targets = document.querySelectorAll('.target');
-            let success = false;
+            const targets = document.querySelectorAll('.target-box');
+            let matched = false;
 
             targets.forEach(target => {
                 if(target.classList.contains('matched')) return;
-                
                 const rect = target.getBoundingClientRect();
+                
                 if(touch.clientX > rect.left && touch.clientX < rect.right &&
                    touch.clientY > rect.top && touch.clientY < rect.bottom) {
                     
                     if(target.dataset.matchId === activeEl.dataset.id) {
                         target.classList.add('matched');
-                        activeEl.remove(); // 移除拖拽元素，目标框内的影子变色
-                        success = true;
+                        activeEl.remove();
+                        matched = true;
                     }
                 }
             });
 
-            if(!success) {
+            if(!matched) {
                 activeEl.classList.remove('dragging');
                 activeEl.style.position = 'static';
             }
-            
+
             activeEl = null;
             document.ontouchmove = null;
             checkWin();
         }
 
         function checkWin() {
-            const matched = document.querySelectorAll('.target.matched').length;
-            const total = document.querySelectorAll('.target').length;
-            if(matched === total) {
+            const matchedCount = document.querySelectorAll('.target-box.matched').length;
+            const total = document.querySelectorAll('.target-box').length;
+            if(matchedCount === total) {
                 setTimeout(() => {
-                    // 简单的视觉反馈
-                    document.body.style.backgroundColor = '#dcfce7';
-                    setTimeout(() => {
-                        document.body.style.backgroundColor = '#eef2ff';
-                        initGame(total);
-                    }, 1000);
-                }, 500);
+                    alert('🎉 棒极了！全对了！');
+                    initGame(total);
+                }, 400);
             }
         }
 
