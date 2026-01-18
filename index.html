@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>幼儿形状认知小游戏</title>
+    <style>
+        body { margin: 0; background: #f0f9ff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; touch-action: none; }
+        h1 { color: #334155; margin-bottom: 20px; font-size: 24px; }
+        .game-container { position: relative; width: 320px; height: 400px; background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-around; padding: 20px; }
+        .target-area, .shapes-area { display: flex; justify-content: space-around; width: 100%; }
+        .shape { width: 60px; height: 60px; cursor: grab; touch-action: none; transition: transform 0.2s; }
+        /* 形状样式 */
+        .circle { border-radius: 50%; background: #ef4444; }
+        .square { background: #3b82f6; }
+        .triangle { width: 0; height: 0; border-left: 30px solid transparent; border-right: 30px solid transparent; border-bottom: 60px solid #22c55e; background: none !important; }
+        /* 目标框样式 */
+        .target { width: 70px; height: 70px; border: 3px dashed #cbd5e1; display: flex; align-items: center; justify-content: center; position: relative; }
+        .target.matched { border: 3px solid #10b981; background: #ecfdf5; }
+        .target-label { position: absolute; bottom: -25px; font-size: 14px; color: #64748b; }
+    </style>
+</head>
+<body>
+
+    <h1>把形状拖到框框里吧！</h1>
+    
+    <div class="game-container">
+        <div class="target-area">
+            <div class="target" data-shape="circle"><div class="target-label">圆形</div></div>
+            <div class="target" data-shape="square"><div class="target-label">正方形</div></div>
+            <div class="target" data-shape="triangle"><div class="target-label">三角形</div></div>
+        </div>
+
+        <div class="shapes-area" id="shapes-box">
+            <div class="shape circle" id="circle" draggable="true" data-type="circle"></div>
+            <div class="shape square" id="square" draggable="true" data-type="square"></div>
+            <div class="shape triangle" id="triangle" draggable="true" data-type="triangle"></div>
+        </div>
+    </div>
+
+    <script>
+        const shapes = document.querySelectorAll('.shape');
+        const targets = document.querySelectorAll('.target');
+
+        shapes.forEach(shape => {
+            // 处理触摸事件 (iPad)
+            shape.addEventListener('touchstart', handleTouchStart, {passive: false});
+            shape.addEventListener('touchmove', handleTouchMove, {passive: false});
+            shape.addEventListener('touchend', handleTouchEnd);
+        });
+
+        let activeShape = null;
+        let startPos = {x: 0, y: 0};
+
+        function handleTouchStart(e) {
+            activeShape = e.target;
+            const touch = e.touches[0];
+            startPos = { x: touch.clientX - activeShape.offsetLeft, y: touch.clientY - activeShape.offsetTop };
+            activeShape.style.zIndex = 1000;
+        }
+
+        function handleTouchMove(e) {
+            if (!activeShape) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            const x = touch.clientX - startPos.x;
+            const y = touch.clientY - startPos.y;
+            activeShape.style.position = 'fixed';
+            activeShape.style.left = x + 'px';
+            activeShape.style.top = y + 'px';
+        }
+
+        function handleTouchEnd(e) {
+            if (!activeShape) return;
+            const shapeType = activeShape.getAttribute('data-type');
+            const touch = e.changedTouches[0];
+            
+            let matched = false;
+            targets.forEach(target => {
+                const rect = target.getBoundingClientRect();
+                if (touch.clientX > rect.left && touch.clientX < rect.right &&
+                    touch.clientY > rect.top && touch.clientY < rect.bottom) {
+                    if (target.getAttribute('data-shape') === shapeType) {
+                        target.classList.add('matched');
+                        activeShape.style.display = 'none'; // 匹配成功消失
+                        matched = true;
+                        checkWin();
+                    }
+                }
+            });
+
+            if (!matched) {
+                // 没对准，重置位置
+                activeShape.style.position = 'static';
+            }
+            activeShape = null;
+        }
+
+        function checkWin() {
+            const matchedCount = document.querySelectorAll('.target.matched').length;
+            if (matchedCount === 3) {
+                setTimeout(() => {
+                    alert('太棒了！你真聪明！');
+                    location.reload();
+                }, 500);
+            }
+        }
+    </script>
+</body>
+</html>
